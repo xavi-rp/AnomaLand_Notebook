@@ -1,29 +1,28 @@
 ---
-title: "Calculating Anomalies in Copernicus Global Land Vegetation-Related Products"
-author: "Xavier Rotllan-Puig (xavier.rotllan.puig@aster-projects.cat) and Michael Cherlet (michael.cherlet@ec.europa.eu)"
-output:
-  html_document:
-    df_print: paged
+title: "Detecting Vegetation Anomalies Using Copernicus Global Land Products"
+author: Xavier Rotllan-Puig (xavier.rotllan.puig@aster-projects.cat) and Michael Cherlet
+  (michael.cherlet@ec.europa.eu)
+output: html_notebook
 note: The .ipynb has been translated from .Rmd using 'jupytext'
 ---
 
-# Purpose
+## Purpose
 
-This notebook shows how to find/calculate anomalies in Copernicus Global Land Service (CGLS)  vegetation-related products (i.e. NDVI), based on the diferences of one product with the Long Term Statistics (LTS) product provided by the CGLS. We use R-based packages and functions for the calculations.
+This notebook shows how to detect vegetation anomalies using Copernicus Global Land Service (CGLS) products (i.e. NDVI), based on the comparison of one product with the Long Term Statistics (LTS) product provided by the CGLS. We use R-based packages and functions for the calculations.
 
-Currently, CGLS provides only LTS (i.e. average of time series 1999-2019) for NDVI. However, the rationale behind the methodology showed in this notebook can be implemented to any other product, bearing in mind that the reference product has to be calculated and/or provided by the user. 
+Currently, CGLS provides only LTS (i.e. statistics of time series 1999-2019) for NDVI. However, the rationale behind the methodology showed in this notebook can be implemented to any other product, bearing in mind that the reference product has to be calculated and/or provided by the user. 
 
-Another consideration is that the NDVI-LTS product provided by the CGLS has a resolution of ca. 1km, while the new products provided as of July 2020 have a resolution of ca. 333m. This means that the product to be analysed has to be resampled accordingly (see below). For more details on the products, please see the description and Product User Manuals documentation at https://land.copernicus.eu/global/products/
-
-
-
-# Step 1: Download the input product files
-
-There are several options to obtain the data from the CGLS servers. For example, you can choose to automatically download the products using the functions found in https://github.com/cgls/Copernicus-Global-Land-Service-Data-Download-with-R. Alternatively, you can download the data directly from the [website](https://land.copernicus.vgt.vito.be/PDF/portal/Application.html#Browse;Root=513186;Time=NORMAL,NORMAL,-1,,,-1,,). For either option, you have to be registered.
+Another consideration is that the NDVI-LTS product provided by the CGLS has a resolution of ca. 1km, while the new provided products as of July 2020 have a resolution of ca. 333m. This means that the product to be analysed has to be resampled accordingly (see below). For more details on the products, please see the description and Product User Manuals documentation at https://land.copernicus.eu/global/themes/vegetation
 
 
 
-# Step 2: Reading in and pre-processing the data
+## Step 1: Downloading the input product files
+
+There are several options to obtain the data from the CGLS servers. For example, you can choose to automatically download the products using the R-based functions found in https://github.com/cgls/Copernicus-Global-Land-Service-Data-Download-with-R. Alternatively, you can download the data directly from the [website](https://land.copernicus.vgt.vito.be/PDF/portal/Application.html#Browse;Root=513186;Time=NORMAL,NORMAL,-1,,,-1,,). For either option, you have to be registered.
+
+
+
+## Step 2: Reading in and pre-processing the data
 
 Once the data set is available, *ncdf4* and *raster* packages functionalities are used to prepare it for the calculations. 
 
@@ -280,13 +279,11 @@ writeRaster(ndvi_lts_1km_sd_avrgPeriod, filename = paste0("ndvi_lts_1km_sd_avrg_
 
 
 
-# Step 3: Calculating anomalies
+## Step 3: Calculating anomalies
 
 At this point, we can really start calculating the anomalies. But first, we load the needed libraries and define some parameters to be used along the process.
 
 ```{r}
-library(raster)
-
 # 'rworldmap' will be used to get information of countries limits in case we want to subset the data using one or several countries/continents
 if(require(rworldmap) == FALSE){install.packages("rworldmap", repos = "https://cloud.r-project.org"); library(rworldmap)} else {library(rworldmap)}
 ```
@@ -296,7 +293,7 @@ if(require(rworldmap) == FALSE){install.packages("rworldmap", repos = "https://c
 
 There are different methods to calculate anomalies, which can be easily found in scientific bibliography. In this Notebook we will propose two methods: z-score and a simpler one.
 
-- Absolute differences with respect to the corresponding long-term average (see e.g. Meroni, et al., 2014; https://doi.org/10.1080/01431161.2014.883090)
+- Absolute differences with respect to the corresponding long-term average (see e.g. Meroni, et al., 2014; https://doi.org/10.1080/01431161.2014.883090). We call it "simple" in this Notebook.
 
 - Z-score (see e.g. Meroni et al., 2019; https://doi.org/10.1016/j.rse.2018.11.041):
 
@@ -444,7 +441,7 @@ if(is.numeric(anom1)){
 &nbsp;
 
 
-# Step 4: Plotting the results
+## Step 4: Plotting the results
 
 And, finally, we can plot the results.
 
@@ -453,7 +450,7 @@ And, finally, we can plot the results.
 year <- 2021
 
 jpeg(paste0("ndvi_1km_anomalies_", anom_method, name2, ".jpg"), width = 22, height = 16.5, units = "cm", res = 300)
-par(mar = c(6, 3, 4, 8), bty = "n")
+par(mar = c(6, 3, 4, 12), bty = "n")
 pal <- colorRampPalette(c("red3", "orange2" , "khaki2", "springgreen2", "springgreen4"))
 par(xpd = FALSE)
 plot(ndvi_1km_anomalies1, col = pal(5), legend = FALSE)
@@ -467,25 +464,25 @@ legend("right",
                   paste0("Low positive anomaly (> ", anom1, ")"),
                   paste0("High positive anomaly (> ", anom2, ")")),
        fill = pal(5),
-       cex = 1,
-       inset = - 0.3)
+       cex = 0.9,
+       inset = - 0.45)
 if(!is.null(cntry)){
   name1 <- paste0(cntry, " : ")
 }else{
   name1 <- ""
 }
-title(main = paste0(name1, "NDVI ANOMALIES\nDekad(s): ", paste(dekads, collapse = "; "), "\nYear: ", year),
+title(main = paste0(name1, "NDVI ANOMALIES\nDekad(s): ", paste(dekads, collapse = "; "), ". Year: ", year),
       outer = TRUE,
       line = - 3.5,
       cex.main = 1.5)
 
 mtext("Current layer: <add info about the layer>",
-      # e.g. "Current layer: Dekad 21 March 2021. 'c_gls_NDVI300_202103210000_GLOBE_OLCI_V2.0.1.nc'",
+      # e.g. "Current layer: Dekad 1 March 2021. 'c_gls_NDVI300_202103010000_GLOBE_OLCI_V2.0.1.nc'",
       side = 1, line = 3, 
       adj = 0,
       cex = 0.8)
 mtext("Reference layer: <add info about the layer>", 
-      # e.g. "Reference layer: Dekad 21 March LTS (1999-2019) 'c_gls_NDVI-LTS_1999-2019-0321_GLOBE_VGT-PROBAV_V3.0.1.nc'",
+      # e.g. "Reference layer: Dekad 1 March LTS (1999-2019) 'c_gls_NDVI-LTS_1999-2019-0301_GLOBE_VGT-PROBAV_V3.0.1.nc'",
       side = 1, line = 4, 
       adj = 0,
       cex = 0.8)
@@ -494,7 +491,11 @@ dev.off()
 
 ```
 
+&nbsp;
 
+From the example:
+
+![](ndvi_1km_anomalies_zscore_sd.jpg)
 
 
 
